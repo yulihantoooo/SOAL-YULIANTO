@@ -1,0 +1,8 @@
+{
+  "name": "Simulasi TKA & Bank Soal Ekonomi SMA",
+  "description": "Platform pembuatan soal dan simulasi TKA Pusmendik Kemdikbud mata pelajaran Ekonomi SMA dengan level kognitif C1-C6, LOTS/MOTS/HOTS, dan ekspor PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
