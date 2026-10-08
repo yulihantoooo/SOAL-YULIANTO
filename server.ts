@@ -1,11 +1,77 @@
-import express, { Request, Response } from 'express';
-import { createServer as createViteServer } from 'vite';
+import express from 'express';
+import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
-import { GoogleGenAI, Type } from '@google/genai';
-import { QuestionItem, GenerationConfig } from './src/types/quiz.js';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
+
+export type QuestionType =
+  | 'pilihan_ganda'
+  | 'pilihan_ganda_kompleks'
+  | 'isian_singkat'
+  | 'uraian_esai'
+  | 'menjodohkan'
+  | 'benar_salah'
+  | 'berbasis_konteks'
+  | 'studi_kasus'
+  | 'praktik_kinerja'
+  | 'respons_tepat'
+  | 'sjt';
+
+export type DifficultyLevel = 'Rendah' | 'Sedang' | 'Sulit';
+export type ThinkingCategory = 'LOTS' | 'MOTS' | 'HOTS';
+export type LearningExperience = 'Memahami' | 'Mengaplikasi' | 'Merefleksi';
+export type CognitiveLevel = 'C1' | 'C2' | 'C3' | 'C4' | 'C5' | 'C6';
+
+export interface MatchingPair {
+  premise: string;
+  response: string;
+}
+
+export interface StatementCheck {
+  statement: string;
+  isCorrect: boolean;
+  explanation?: string;
+}
+
+export interface QuestionItem {
+  id: string;
+  type: QuestionType;
+  difficulty: DifficultyLevel;
+  thinkingCategory: ThinkingCategory;
+  learningExperience: LearningExperience;
+  cognitiveLevel: CognitiveLevel;
+  stimulus?: string;
+  questionText: string;
+  options?: string[];
+  correctOptionIndex?: number;
+  correctOptionsMulti?: number[];
+  shortAnswerKey?: string;
+  matchingPairs?: MatchingPair[];
+  statements?: StatementCheck[];
+  essayRubric?: string;
+  rationale: string;
+  topic: string;
+  learningObjective: string;
+}
+
+export interface GenerationConfig {
+  schoolName: string;
+  schoolLogo: string;
+  educationLevel: 'SMA';
+  grade: 'Kelas 10' | 'Kelas 11' | 'Kelas 12';
+  subject: string;
+  topic: string;
+  learningObjective: string;
+  selectedQuestionTypes: QuestionType[];
+  questionCounts: Record<QuestionType, number>;
+  selectedDifficulties: DifficultyLevel[];
+  selectedThinkingCategories: ThinkingCategory[];
+  selectedLearningExperiences: LearningExperience[];
+  selectedCognitiveLevels: CognitiveLevel[];
+  customAiInstructions: string;
+}
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -374,15 +440,17 @@ async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
 
   if (!isProd) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+    const distPath = path.resolve(process.cwd(), 'dist');
+    app.use(express.static(distPath));
     app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.resolve(distPath, 'index.html'));
     });
   }
 
