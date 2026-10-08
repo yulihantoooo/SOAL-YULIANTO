@@ -1,6 +1,7 @@
 import { GenerationConfig, QuestionItem } from '../types/quiz.js';
 
 export const DEFAULT_CONFIG: GenerationConfig = {
+  authorName: 'YULIANTO HARSONO',
   schoolName: 'SMA NEGERI UNGGULAN NASIONAL',
   schoolLogo: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=150&auto=format&fit=crop&q=80',
   educationLevel: 'SMA',

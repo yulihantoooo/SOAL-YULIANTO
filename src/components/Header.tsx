@@ -7,7 +7,8 @@ import {
   BookOpen, 
   Download, 
   GraduationCap, 
-  Sparkles 
+  Sparkles,
+  UserCheck
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -46,6 +47,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center space-x-3 text-slate-300">
+            <div className="flex items-center gap-1.5 bg-blue-950/90 px-2.5 py-0.5 rounded border border-amber-400/60 text-amber-300 font-bold text-[11px] shadow-sm">
+              <UserCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Penyusun: <strong className="text-white font-extrabold">{config.authorName || 'YULIANTO HARSONO'}</strong></span>
+            </div>
             <button
               onClick={onOpenLogoModal}
               className="hover:text-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer text-[11px]"
@@ -95,10 +100,12 @@ export const Header: React.FC<HeaderProps> = ({
                   C1-C6 HOTS
                 </span>
               </div>
-              <p className="text-xs text-slate-400 flex items-center gap-1">
+              <p className="text-xs text-slate-400 flex flex-wrap items-center gap-1.5 mt-0.5">
                 <span>Model Pusmendik Kemdikbud</span>
                 <span>•</span>
-                <span className="text-amber-400 font-medium">Asesmen Standar Nasional</span>
+                <span className="text-amber-400 font-bold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/30">
+                  Penyusun: {config.authorName || 'YULIANTO HARSONO'}
+                </span>
               </p>
             </div>
           </div>

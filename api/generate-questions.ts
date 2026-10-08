@@ -1,10 +1,5 @@
-import express from 'express';
-import type { Request, Response } from 'express';
-import dotenv from 'dotenv';
-import path from 'path';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
-
-dotenv.config();
 
 export type QuestionType =
   | 'pilihan_ganda'
@@ -74,53 +69,18 @@ export interface GenerationConfig {
   customAiInstructions: string;
 }
 
-const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-
-app.use(express.json({ limit: '10mb' }));
-
-// Initialize Google Gen AI
-const geminiApiKey = process.env.GEMINI_API_KEY;
-let aiClient: GoogleGenAI | null = null;
-
-if (geminiApiKey) {
-  aiClient = new GoogleGenAI({
-    apiKey: geminiApiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
-}
-
-// Fallback high-quality curated bank generator for offline/resilience
 function generateFallbackBank(config: GenerationConfig): QuestionItem[] {
   const result: QuestionItem[] = [];
   const topic = config.topic || 'Kebijakan Moneter, Inflasi, dan Keseimbangan Pasar';
   const learningObjective = config.learningObjective || 'Menganalisis dampak kebijakan moneter terhadap stabilitas harga dan pertumbuhan ekonomi nasional.';
 
-  const typeLabels: Record<string, string> = {
-    pilihan_ganda: 'Pilihan Ganda',
-    pilihan_ganda_kompleks: 'Pilihan Ganda Kompleks',
-    isian_singkat: 'Isian Singkat',
-    uraian_esai: 'Uraian / Esai',
-    menjodohkan: 'Menjodohkan',
-    benar_salah: 'Benar–Salah',
-    berbasis_konteks: 'Berbasis Konteks / Stimulus',
-    studi_kasus: 'Studi Kasus',
-    praktik_kinerja: 'Praktik / Kinerja',
-    respons_tepat: 'Menentukan Respons Paling Tepat',
-    sjt: 'Situational Judgemental Test (SJT)',
-  };
-
-  for (const qType of config.selectedQuestionTypes) {
-    const count = Math.min(config.questionCounts[qType] || 5, 25); // generate reasonable batch for immediate interactive response
+  for (const qType of (config.selectedQuestionTypes || ['pilihan_ganda'])) {
+    const count = Math.min(config.questionCounts?.[qType] || 5, 25);
     for (let i = 1; i <= count; i++) {
-      const cog = config.selectedCognitiveLevels[(i - 1) % config.selectedCognitiveLevels.length] || 'C5';
-      const think = config.selectedThinkingCategories[(i - 1) % config.selectedThinkingCategories.length] || 'HOTS';
-      const diff = config.selectedDifficulties[(i - 1) % config.selectedDifficulties.length] || 'Sulit';
-      const exp = config.selectedLearningExperiences[(i - 1) % config.selectedLearningExperiences.length] || 'Merefleksi';
+      const cog = config.selectedCognitiveLevels?.[(i - 1) % config.selectedCognitiveLevels.length] || 'C5';
+      const think = config.selectedThinkingCategories?.[(i - 1) % config.selectedThinkingCategories.length] || 'HOTS';
+      const diff = config.selectedDifficulties?.[(i - 1) % config.selectedDifficulties.length] || 'Sulit';
+      const exp = config.selectedLearningExperiences?.[(i - 1) % config.selectedLearningExperiences.length] || 'Merefleksi';
 
       if (qType === 'pilihan_ganda') {
         result.push({
@@ -174,7 +134,7 @@ function generateFallbackBank(config: GenerationConfig): QuestionItem[] {
           learningExperience: exp,
           cognitiveLevel: cog,
           stimulus: `Pada fungsi permintaan Qd = 120 - 4P dan fungsi penawaran Qs = -30 + 6P, terjadi pergeseran ekuilibrium pasar komoditas beras setelah pemerintah memberikan subsidi sebesar Rp2 per unit produksi kepada petani.`,
-          questionText: `Hitunglah besarnya harga keseimbangan pasar (P) yang baru setelah subsidi dinikmati oleh konsumen! Tuliskan angka nominal akhirnya saja (contoh: 14).`,
+          questionText: `Hitunglah besarnya harga keseimbangan pasar (P) yang baru setelah subsidi dinikmati oleh konsumen! Tuliskan angka nominal akhirnya saja (contoh: 13.8).`,
           shortAnswerKey: '13.8',
           rationale: `Fungsi penawaran baru dengan subsidi s=2: P = (Qs + 30)/6 - 2 => 6(P+2) = Qs + 30 => Qs' = 6P - 18. Ekuilibrium baru: 120 - 4P = 6P - 18 => 10P = 138 => P = 13,8.`,
           topic,
@@ -336,42 +296,73 @@ function generateFallbackBank(config: GenerationConfig): QuestionItem[] {
   return result;
 }
 
-// Health check & status endpoint for /api/generate-questions
-app.get('/api/generate-questions', (_req: Request, res: Response) => {
-  return res.status(200).json({
-    status: 'ready',
-    endpoint: '/api/generate-questions',
-    service: 'Pusmendik TKA Ekonomi SMA Generator API (Express Server)',
-    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
-  });
-});
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS Headers for Vercel
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-// API endpoint for generating questions
-app.post('/api/generate-questions', async (req: Request, res: Response) => {
-  const config = req.body as GenerationConfig;
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: 'ready',
+      endpoint: '/api/generate-questions',
+      service: 'Pusmendik TKA Ekonomi SMA Generator API (Vercel Serverless Function)',
+      geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
+  }
+
+  let config: GenerationConfig = req.body;
+  if (typeof config === 'string') {
+    try {
+      config = JSON.parse(config);
+    } catch {
+      return res.status(400).json({ error: 'Payload tidak valid: body bukan JSON yang sah.' });
+    }
+  }
 
   if (!config || !config.selectedQuestionTypes || config.selectedQuestionTypes.length === 0) {
     return res.status(400).json({ error: 'Konfigurasi tidak lengkap: Pilih minimal satu bentuk soal.' });
   }
 
-  // If Gemini API is available, generate tailored questions with Gemini 3.8 Flash
-  if (aiClient) {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  if (geminiApiKey) {
     try {
+      const ai = new GoogleGenAI({
+        apiKey: geminiApiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+
       const prompt = `
 Anda adalah Pakar Asesmen Pendidikan Nasional Pusmendik Kemdikbud dan Guru Ahli Mata Pelajaran Ekonomi Jenjang SMA.
 Tugas Anda adalah memproduksi butir-butir soal ujian standar asesmen nasional (TKA / ANBK Pusmendik Kemdikbud) berkualitas tinggi.
 
 PARAMETER SOAL:
-- Jenjang: SMA (${config.grade})
+- Jenjang: SMA (${config.grade || 'Kelas 11'})
 - Mata Pelajaran: Ekonomi SMA
 - Topik / Materi: "${config.topic || 'Ekonomi Makro & Mikro, Kebijakan Fiskal/Moneter, Pelaku Ekonomi'}"
 - Tujuan Pembelajaran: "${config.learningObjective || 'Peserta didik mampu mengevaluasi dan merumuskan solusi atas masalah ekonomi riil'}"
 - Bentuk Soal yang Diminta: ${config.selectedQuestionTypes.join(', ')}
-- Jumlah Soal per Bentuk: ${JSON.stringify(config.questionCounts)}
-- Kategori Berpikir yang Diinginkan: ${config.selectedThinkingCategories.join(', ')}
-- Tingkat Kesulitan yang Diinginkan: ${config.selectedDifficulties.join(', ')}
-- Pengalaman Belajar yang Diinginkan: ${config.selectedLearningExperiences.join(', ')} (Memahami pemahaman dasar, Mengaplikasi dalam konteks, Merefleksi kritis)
-- Level Kognitif yang Diinginkan: ${config.selectedCognitiveLevels.join(', ')}
+- Jumlah Soal per Bentuk: ${JSON.stringify(config.questionCounts || {})}
+- Kategori Berpikir yang Diinginkan: ${(config.selectedThinkingCategories || ['HOTS']).join(', ')}
+- Tingkat Kesulitan yang Diinginkan: ${(config.selectedDifficulties || ['Sedang', 'Sulit']).join(', ')}
+- Pengalaman Belajar yang Diinginkan: ${(config.selectedLearningExperiences || ['Merefleksi']).join(', ')}
+- Level Kognitif yang Diinginkan: ${(config.selectedCognitiveLevels || ['C4', 'C5', 'C6']).join(', ')}
 - Instruksi Khusus: Berfokus pada evaluasi (C5), penciptaan (C6), dan pemecahan masalah kompleks ekonomi riil Indonesia (data BPS, Bank Indonesia, APBN Kemkeu, OJK, pasar modal, ekspor-impor, UMKM). Soal harus memiliki stimulus (bacaan kontekstual, tabel angka, atau studi kasus) yang autentik dan kaya wawasan.
 
 Instruksi Tambahan Pengguna: ${config.customAiInstructions || 'Fokus pada HOTS C4-C6 dan studi kasus ekonomi riil.'}
@@ -401,7 +392,7 @@ Hasilkan JSON ARRAY yang berisi objek butir soal dengan format:
 ]
 `;
 
-      const geminiResponse = await aiClient.models.generateContent({
+      const geminiResponse = await ai.models.generateContent({
         model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
@@ -423,53 +414,27 @@ Hasilkan JSON ARRAY yang berisi objek butir soal dengan format:
       }
 
       if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
-        // Ensure every question has ID and correct structure
         const formatted = parsedQuestions.map((q, idx) => ({
           ...q,
           id: q.id || `gen-${Date.now().toString(36)}-${idx}`,
           topic: q.topic || config.topic,
           learningObjective: q.learningObjective || config.learningObjective,
         }));
-        return res.json({ success: true, questions: formatted, source: 'gemini-3.8-flash' });
+        return res.status(200).json({ success: true, questions: formatted, source: 'gemini-3.8-flash' });
       }
     } catch (err: unknown) {
-      console.warn('Gemini API call returned error or invalid JSON, falling back to curated bank:', err);
+      console.warn('Gemini API call on Vercel returned error or invalid JSON, using curated fallback bank:', err);
     }
   }
 
-  // Fallback generation (or when API key not set)
+  // Fallback generation (when API key is not configured or in case of transient quota)
   const fallbackQuestions = generateFallbackBank(config);
-  return res.json({
+  return res.status(200).json({
     success: true,
     questions: fallbackQuestions,
     source: 'bank-kurikulum-pusmendik-fallback',
-    message: aiClient ? 'Menggunakan bank kurikulum terkurasi.' : 'GEMINI_API_KEY tidak terdeteksi, menggunakan bank soal kurikulum ekonomi Kemdikbud bawaan.',
-  });
-});
-
-async function startServer() {
-  const isProd = process.env.NODE_ENV === 'production';
-
-  if (!isProd) {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'));
-    });
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server listening on port ${PORT}`);
+    message: geminiApiKey
+      ? 'Menggunakan bank kurikulum terkurasi berstandar Pusmendik.'
+      : 'GEMINI_API_KEY belum disetel di Environment Variables Vercel. Menggunakan bank kurikulum terkurasi Pusmendik bawaan.',
   });
 }
-
-startServer().catch((err) => {
-  console.error('Failed to start server:', err);
-});

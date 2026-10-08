@@ -63,7 +63,7 @@ export function downloadQuizPdf(questions: QuestionItem[], config: GenerationCon
   doc.setFontSize(9);
   doc.setTextColor(71, 85, 105);
   doc.text(`Mata Pelajaran: ${config.subject}   |   Jenjang: SMA   |   Tingkat: ${config.grade}`, margin + 6, y + 21);
-  doc.text(`Topik: ${config.topic.slice(0, 75)}${config.topic.length > 75 ? '...' : ''}`, margin + 6, y + 26);
+  doc.text(`Penyusun: ${config.authorName || 'YULIANTO HARSONO'}   |   Topik: ${config.topic.slice(0, 50)}${config.topic.length > 50 ? '...' : ''}`, margin + 6, y + 26);
 
   y += 38;
 
@@ -314,7 +314,7 @@ export function downloadQuizPdf(questions: QuestionItem[], config: GenerationCon
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
     doc.text(
-      'Dokumen resmi dibuat otomatis dengan Simulasi TKA & Bank Soal Ekonomi SMA - Model Pusmendik Kemdikbud.',
+      `Dokumen resmi Simulasi TKA & Bank Soal Ekonomi SMA - Pusmendik Kemdikbud. Penyusun: ${config.authorName || 'YULIANTO HARSONO'}.`,
       margin,
       pageHeight - 6
     );

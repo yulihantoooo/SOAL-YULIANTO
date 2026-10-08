@@ -270,8 +270,12 @@ export const TkaSimulationCbt: React.FC<TkaSimulationCbtProps> = ({
               <span className="text-[10px] font-bold tracking-wider text-amber-300 uppercase block">
                 SIMULASI TKA - PUSMENDIK KEMDIKBUD
               </span>
-              <span className="text-xs font-semibold text-slate-100">
-                {config.subject} ({config.grade})
+              <span className="text-xs font-semibold text-slate-100 flex items-center gap-1.5 flex-wrap">
+                <span>{config.subject} ({config.grade})</span>
+                <span>•</span>
+                <span className="text-amber-400 font-bold bg-white/10 px-1.5 py-0.2 rounded">
+                  Peserta / Guru: {config.authorName || 'YULIANTO HARSONO'}
+                </span>
               </span>
             </div>
           </div>

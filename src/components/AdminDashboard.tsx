@@ -28,7 +28,9 @@ import {
   Play,
   RotateCcw,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  UserCheck,
+  User
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -186,16 +188,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-500/30">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Generator Asesmen Berstandar Pusmendik Kemdikbud TKA</span>
+          <div className="space-y-2.5 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-500/30">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Generator Asesmen Berstandar Pusmendik Kemdikbud TKA</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black shadow-md border border-amber-300 tracking-wide">
+                <UserCheck className="w-3.5 h-3.5 text-slate-950 shrink-0" />
+                <span>PENYUSUN ASESMEN: {config.authorName || 'YULIANTO HARSONO'}</span>
+              </div>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               Pusat Konfigurasi & Bank Soal Ekonomi SMA
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed">
-              Buat paket soal terstandar asesmen nasional untuk Mata Pelajaran Ekonomi SMA dengan spektrum kognitif lengkap (C1–C6), kategori LOTS/MOTS/HOTS, 11 variasi bentuk soal, dan orientasi evaluasi serta pemecahan masalah kompleks.
+              Disusun oleh <strong className="text-amber-300 font-bold">{config.authorName || 'YULIANTO HARSONO'}</strong> — Buat paket soal terstandar asesmen nasional untuk Mata Pelajaran Ekonomi SMA dengan spektrum kognitif lengkap (C1–C6), kategori LOTS/MOTS/HOTS, 11 variasi bentuk soal, dan orientasi evaluasi serta pemecahan masalah kompleks.
             </p>
           </div>
 
@@ -264,7 +272,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Penyusun / Guru Pengampu */}
+              <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-300/80 shadow-sm">
+                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <UserCheck className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Penyusun / Guru</span>
+                </label>
+                <input
+                  type="text"
+                  value={config.authorName || 'YULIANTO HARSONO'}
+                  onChange={(e) => setConfig((p) => ({ ...p, authorName: e.target.value }))}
+                  className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-sm font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="Nama Penyusun"
+                />
+              </div>
+
               {/* Jenjang */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -273,7 +296,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                   <span className="text-base font-extrabold text-slate-900">SMA</span>
-                  <span className="text-[11px] text-slate-400 font-medium">(Sekolah Menengah Atas)</span>
+                  <span className="text-[11px] text-slate-400 font-medium">(Fase E & F)</span>
                 </div>
               </div>
 
@@ -284,7 +307,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </label>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  <span className="text-base font-extrabold text-slate-900">Mata Pelajaran Ekonomi</span>
+                  <span className="text-sm font-extrabold text-slate-900">Mata Pelajaran Ekonomi</span>
                 </div>
               </div>
 
@@ -702,6 +725,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 ✕
               </button>
+            </div>
+
+            {/* Nama Penyusun / Guru */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-amber-600" />
+                <span>Nama Penyusun / Guru Pengampu:</span>
+              </label>
+              <input
+                type="text"
+                value={config.authorName || 'YULIANTO HARSONO'}
+                onChange={(e) => setConfig((p) => ({ ...p, authorName: e.target.value }))}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="YULIANTO HARSONO"
+              />
             </div>
 
             {/* Nama Sekolah */}

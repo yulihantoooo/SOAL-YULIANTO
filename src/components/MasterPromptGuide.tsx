@@ -87,6 +87,10 @@ Anda adalah Pakar Penilaian dan Asesmen Pendidikan Pusmendik Kemdikbudristek RI 
    - Fitur ukuran fon (A, A+, A++), countdown timer ujian, panel navigasi "Daftar Soal", tombol "Soal Sebelumnya", tombol kuning "Ragu-ragu", dan "Soal Berikutnya".
 3. **Ekspor Dokumen:**
    - Tombol "Simpan PDF" yang secara otomatis mengunduh file PDF resmi lengkap dengan kop instansi, tabel kisi-kisi, butir soal, dan kunci jawaban/pembahasan.
+4. **Kompatibilitas Penuh Vercel (Serverless):**
+   - Endpoint \`/api/generate-questions\` tersedia secara native via Vercel Serverless Function (\`api/generate-questions.ts\`).
+   - Cukup pasang \`GEMINI_API_KEY\` di menu Vercel Project Settings > Environment Variables (hanya berjalan di server-side, tidak pernah terekspos ke browser).
+   - Dilengkapi \`vercel.json\` untuk routing otomatis.
 `;
 
   const copyToClipboard = () => {

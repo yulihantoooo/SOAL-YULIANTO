@@ -49,6 +49,7 @@ export interface QuestionItem {
 }
 
 export interface GenerationConfig {
+  authorName: string; // Penyusun / Guru Pengampu
   schoolName: string;
   schoolLogo: string;
   educationLevel: 'SMA';

@@ -38,21 +38,36 @@ export default function App() {
         body: JSON.stringify(config),
       });
 
-      const data = await response.json();
+      const rawText = await response.text();
+      let data: any = null;
 
-      if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(
+          `Respons server bukan JSON (Status HTTP ${response.status}). Periksa rute /api/generate-questions.`
+        );
+      }
+
+      if (response.ok && data?.success && Array.isArray(data.questions) && data.questions.length > 0) {
         setQuestions(data.questions);
+        const sourceLabel =
+          data.source === 'gemini-3.8-flash'
+            ? 'via Gemini 3.8 Flash'
+            : 'via Bank Kurikulum Pusmendik Terkurasi';
         showToast(
-          `Berhasil memproduksi ${data.questions.length} butir soal baru berstandar Pusmendik!`,
+          `Berhasil memproduksi ${data.questions.length} butir soal (${sourceLabel})!`,
           'success'
         );
         setActiveTab('bank');
       } else {
-        showToast('Gagal memproses soal: ' + (data.error || 'Format tidak valid'), 'error');
+        const errMsg = data?.error || data?.message || `Gagal memproses soal (HTTP ${response.status})`;
+        showToast(errMsg, 'error');
       }
     } catch (err: unknown) {
       console.error('Generation error:', err);
-      showToast('Terjadi kesalahan jaringan saat generate soal.', 'error');
+      const message = err instanceof Error ? err.message : 'Terjadi kendala koneksi ke endpoint /api/generate-questions';
+      showToast(message, 'error');
     } finally {
       setIsGenerating(false);
     }
